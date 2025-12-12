@@ -1,0 +1,80 @@
+plugins {
+//    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
+//    id 'maven-publish' // 新增Maven插件
+}
+
+android {
+    namespace 'com.jy.networklogmonitor'
+    compileSdk 31
+
+    defaultConfig {
+//        applicationId "com.jy.networklogmonitor"
+        minSdk 21
+        targetSdk 31
+        versionCode 1
+        versionName "1.0.1"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    implementation libs.okhttp
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+}
+
+
+// 自定义任务：重命名AAR文件为「项目名-版本号.aar」
+afterEvaluate {
+    // 定义项目名和版本号（可自定义）
+    def projectName = "NetworkLogMonitor"
+    def versionName = android.defaultConfig.versionName
+
+    // 遍历所有构建类型（release/debug）
+    android.buildTypes.each { buildType ->
+        def taskName = "assemble${buildType.name.capitalize()}"
+        def assembleTask = tasks.findByName(taskName)
+
+        if (assembleTask) {
+            assembleTask.doLast {
+                // AAR默认输出路径
+                def outputDir = file("${project.buildDir}/outputs/aar/")
+                // 原文件名（如 app-release.aar）
+                def originalFileName = "${project.name}-${buildType.name}.aar"
+                // 新文件名（如 NetworkLogMonitor-1.0.0.aar）
+                def newFileName = "${projectName}-${versionName}.aar"
+
+                // 重命名文件
+                def originalFile = file("${outputDir}/${originalFileName}")
+                def newFile = file("${outputDir}/${newFileName}")
+
+                if (originalFile.exists()) {
+                    originalFile.renameTo(newFile)
+                    println "AAR文件已重命名：${newFileName}"
+                } else {
+                    println "未找到原AAR文件：${originalFileName}"
+                }
+            }
+        }
+    }
+}
+
