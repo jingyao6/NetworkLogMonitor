@@ -10,6 +10,7 @@ public class NetworkLog {
     private String requestBody;
     private String responseBody;
     private String headers;
+    private String errorMessage;
     private Date timestamp;
 
     public NetworkLog(String url, String method) {
@@ -73,6 +74,14 @@ public class NetworkLog {
 
     public void setHeaders(String headers) {
         this.headers = headers;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
     public Date getTimestamp() {

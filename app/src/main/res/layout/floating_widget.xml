@@ -5,21 +5,21 @@
 
     <Button
         android:id="@+id/floating_button"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:background="@drawable/ic_network"
         android:backgroundTint="#3F51B5"
-        android:elevation="8dp"
+        android:elevation="4dp"
         android:shape="oval" />
 
     <TextView
         android:id="@+id/log_count"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
         android:layout_gravity="top|right"
         android:background="@drawable/shape_circle_red"
         android:textColor="#FFFFFF"
-        android:textSize="12sp"
+        android:textSize="9sp"
         android:gravity="center"
         android:elevation="10dp"
         android:padding="2dp"/>

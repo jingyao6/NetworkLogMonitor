@@ -12,12 +12,16 @@ NetworkLogMonitor 是一个 Android 网络日志监控库，用于捕获和展�
 - 🎨 直观的可视化界面
 - 🌈 根据状态码自动显示不同颜色
 - 📱 悬浮窗智能显示（仅在应用前台显示）
+- 🔄 支持在详情页重新发起请求
+- 🛠️ 支持自定义请求字段编辑
+- 🔐 支持自定义加解密处理
+- ⚡ 重新请求后实时更新界面显示
 
 ## 集成方法
 
 ### 1. 添加依赖
 
-将 NetworkLogMonitor-1.0.1.aar 文件复制到您的项目 libs 目录下，然后在模块的 build.gradle 文件中添加：
+将 NetworkLogMonitor-1.0.2.aar 文件复制到您的项目 libs 目录下，然后在模块的 build.gradle 文件中添加：
 
 ```groovy
 // 在 repositories 中添加 libs 目录
@@ -28,7 +32,7 @@ repositories {
 }
 
 dependencies {
-    implementation (name: 'NetworkLogMonitor-1.0.1', ext: 'aar')
+    implementation (name: 'NetworkLogMonitor-1.0.2', ext: 'aar')
     
     // 确保项目中已添加以下依赖
     implementation 'com.squareup.okhttp3:okhttp:4.11.0'
@@ -85,7 +89,61 @@ OkHttpClient okHttpClient = new OkHttpClient.Builder()
         .build();
 ```
 
-### 3. 停止监控（可选）
+### 3. 设置自定义加解密处理（可选）
+
+如果需要对请求体和响应体进行自定义加解密处理，可以实现 EncryptionHandler 接口：
+
+```java
+NetworkLogInterceptor.setEncryptionHandler(new NetworkLogInterceptor.EncryptionHandler() {
+    @Override
+    public String encryptRequestBody(String url, RequestBody originalBody) {
+        // 根据 URL 决定是否加密
+        if (url.contains("/api/secure/")) {
+            // 加密逻辑
+            try {
+                Buffer buffer = new Buffer();
+                originalBody.writeTo(buffer);
+                String originalContent = buffer.readUtf8();
+                return encrypt(originalContent); // 自定义加密方法
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        // 不加密，直接返回原始内容
+        try {
+            Buffer buffer = new Buffer();
+            originalBody.writeTo(buffer);
+            return buffer.readUtf8();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+    
+    @Override
+    public String decryptResponseBody(String url, ResponseBody responseBody) {
+        // 根据 URL 决定是否解密
+        if (url.contains("/api/secure/")) {
+            // 解密逻辑
+            try {
+                String encryptedContent = responseBody.string();
+                return decrypt(encryptedContent); // 自定义解密方法
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        // 不解密，直接返回原始内容
+        try {
+            return responseBody.string();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+});
+```
+
+### 4. 停止监控（可选）
 
 如果需要停止监控，可以调用：
 
@@ -116,6 +174,12 @@ NetworkLogMonitor.stop(this);
 - 包括：请求方法、状态码、响应时间、URL、时间戳
 - 显示请求头和响应头
 - 显示请求体和响应体
+- 支持编辑请求字段：URL、请求头、请求体
+- 支持重新发起请求
+- 重新请求后实时更新界面显示
+- 支持查看请求失败时的错误信息
+- 根据状态码自动显示不同颜色
+- 根据请求方法自动显示不同颜色
 
 ## 注意事项
 
@@ -132,13 +196,17 @@ NetworkLogMonitor.stop(this);
 - Material Design
 
 ## 版本历史
-
+- v1.0.2
+ - 支持在详情页重新发起请求
+  - 支持自定义请求字段编辑
+  - 支持自定义加解密处理
+  - 重新请求后实时更新界面显示
+  - 修复了连接失败或超时等状态的显示
 - v1.0.1
   - 修复了 ResponseBody.create() 方法参数顺序问题
   - 实现了悬浮窗日志数量动态更新
   - 实现了应用前后台状态监听，后台时隐藏悬浮窗
   - 添加了搜索功能
-
 - v1.0.0
   - 初始版本
   - 实现了基本的网络日志捕获和显示功能
