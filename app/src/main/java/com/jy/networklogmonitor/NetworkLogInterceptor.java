@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.Request;
@@ -22,26 +23,16 @@ public class NetworkLogInterceptor implements Interceptor {
         void onLogChanged();
     }
     
-    // 加密处理接口
-    public interface EncryptionHandler {
-        // 加密请求体
-        String encryptRequestBody(String url,RequestBody originalBody);
-        
-        // 解密响应体
-        String decryptResponseBody(String url,ResponseBody responseBody);
-    }
-    
+
     // 加密处理器实例
-    private static EncryptionHandler encryptionHandler;
-    
-    // 设置加密处理器
-    public static void setEncryptionHandler(EncryptionHandler handler) {
-        encryptionHandler = handler;
+    private static Interceptor encryptionInterceptor;
+
+    public static Interceptor getEncryptionInterceptor() {
+        return encryptionInterceptor;
     }
-    
-    // 获取加密处理器
-    public static EncryptionHandler getEncryptionHandler() {
-        return encryptionHandler;
+
+    public static void setEncryptionInterceptor(Interceptor encryptionInterceptor) {
+        NetworkLogInterceptor.encryptionInterceptor = encryptionInterceptor;
     }
 
     @NonNull
@@ -60,15 +51,7 @@ public class NetworkLogInterceptor implements Interceptor {
             Buffer buffer = new Buffer();
             requestBody.writeTo(buffer);
             requestBodyString = buffer.readUtf8();
-            // 使用加密处理器加密请求体（如果存在）
-            if (encryptionHandler != null) {
-                try {
-                    requestBodyString = encryptionHandler.encryptRequestBody(request.url().toString(), requestBody);
-                } catch (Exception e) {
-                    // 如果加密失败，使用原始请求体
-                    e.printStackTrace();
-                }
-            }
+            // 直接记录原始请求体，不进行加密处理
             log.setRequestBody(requestBodyString);
         }
 
@@ -91,17 +74,7 @@ public class NetworkLogInterceptor implements Interceptor {
             if (responseBody != null) {
                 MediaType mediaType = responseBody.contentType();
                 String bodyString = responseBody.string();
-                // 使用加密处理器解密响应体（如果存在）
-                if (encryptionHandler != null) {
-                    try {
-                        // 重新构建一个 ResponseBody 用于解密，因为原 ResponseBody 已经被读取
-                        ResponseBody decryptBody = ResponseBody.create(mediaType, bodyString);
-                        bodyString = encryptionHandler.decryptResponseBody(request.url().toString(), decryptBody);
-                    } catch (Exception e) {
-                        // 如果解密失败，使用原始响应体
-                        e.printStackTrace();
-                    }
-                }
+                // 直接记录原始响应体，不进行解密处理
                 log.setResponseBody(bodyString);
                 // 重新构建响应体，因为它只能被读取一次
                 response = response.newBuilder()

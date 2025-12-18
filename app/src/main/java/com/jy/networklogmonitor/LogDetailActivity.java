@@ -14,12 +14,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class LogDetailActivity extends AppCompatActivity {
     private TextView methodText;
@@ -38,7 +40,7 @@ public class LogDetailActivity extends AppCompatActivity {
 
     private NetworkLog currentLog;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private final OkHttpClient client = new OkHttpClient();
+    private OkHttpClient client = new OkHttpClient();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +82,18 @@ public class LogDetailActivity extends AppCompatActivity {
         // 设置重新发送按钮点击事件
         resendButton.setOnClickListener(v -> resendRequest());
 
+
+
+        if (NetworkLogInterceptor.getEncryptionInterceptor()!=null){
+            OkHttpClient.Builder builder=new OkHttpClient.Builder()
+                    .retryOnConnectionFailure(true)//失败重连
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(10, TimeUnit.SECONDS)
+                    .callTimeout(10, TimeUnit.SECONDS);
+
+            builder.addInterceptor(NetworkLogInterceptor.getEncryptionInterceptor());
+            client=builder.build();
+        }
 
     }
 
@@ -201,10 +215,15 @@ public class LogDetailActivity extends AppCompatActivity {
         Request.Builder requestBuilder = new Request.Builder()
                 .url(url);
         
+        // 准备请求体，不进行加密
+        String finalRequestBody = body;
         
         // 添加请求体（仅非GET请求）
         if (!method.equals("GET") && !body.isEmpty()) {
-            requestBuilder.method(method, RequestBody.create(MediaType.parse("application/json"), body));
+            // 创建原始请求体
+            RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"), body);
+            
+            requestBuilder.method(method, requestBody);
         }
         
         Request request = requestBuilder.build();
@@ -215,22 +234,31 @@ public class LogDetailActivity extends AppCompatActivity {
         // 发送请求
         new Thread(() -> {
             try {
+                // 应用URL加密（如果存在加密处理器）
+                String encryptedUrl = url;
+
+
+                // 更新请求URL
+                Request encryptedRequest = request.newBuilder()
+                        .url(encryptedUrl)
+                        .build();
+                
                 // 发送请求并获取响应
-                Response response = client.newCall(request).execute();
+                Response response = client.newCall(encryptedRequest).execute();
                 
                 // 记录请求结束时间
                 long endTime = System.currentTimeMillis();
                 long responseTime = endTime - startTime;
                 
-                // 读取响应信息
+                // 读取响应体并解密（如果存在加密处理器）
                 final int statusCode = response.code();
                 final long finalResponseTime = responseTime;
-                final String finalBody = body;
-                String tempResponseBody = "";
+                
+                String responseBody = "";
                 if (response.body() != null) {
-                    tempResponseBody = response.body().string();
+                    responseBody = response.body().string();
                 }
-                final String finalResponseBody = tempResponseBody;
+                final String finalResponseBody = responseBody;
                 
                 // 处理响应
                 runOnUiThread(() -> {
@@ -238,8 +266,8 @@ public class LogDetailActivity extends AppCompatActivity {
                     NetworkLog newLog = new NetworkLog(url, method);
                     newLog.setStatusCode(statusCode);
                     newLog.setResponseTime(finalResponseTime);
-                    newLog.setRequestBody(finalBody);
-                    newLog.setResponseBody(finalResponseBody);
+                    newLog.setRequestBody(finalRequestBody); // 显示加密前的请求体
+                    newLog.setResponseBody(finalResponseBody); // 显示解密后的响应体
                     newLog.setHeaders(currentLog.getHeaders());
                     
                     // 更新当前日志
@@ -254,10 +282,7 @@ public class LogDetailActivity extends AppCompatActivity {
             } catch (IOException e) {
                 // 记录请求结束时间
                 long endTime = System.currentTimeMillis();
-                long responseTime = endTime - startTime;
-                
-                final long finalResponseTime = responseTime;
-                final String finalBody = body;
+                final long finalResponseTime = endTime - startTime;
                 final String errorMessage = e.getMessage();
                 
                 runOnUiThread(() -> {
@@ -265,7 +290,7 @@ public class LogDetailActivity extends AppCompatActivity {
                     NetworkLog newLog = new NetworkLog(url, method);
                     newLog.setStatusCode(0);
                     newLog.setResponseTime(finalResponseTime);
-                    newLog.setRequestBody(finalBody);
+                    newLog.setRequestBody(finalRequestBody); // 显示加密前的请求体
                     newLog.setResponseBody("Request failed: " + errorMessage);
                     newLog.setErrorMessage(errorMessage);
                     newLog.setHeaders(currentLog.getHeaders());

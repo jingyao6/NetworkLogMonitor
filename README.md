@@ -82,7 +82,7 @@ NetworkLogMonitor.initialize(this);
 
 ```java
 OkHttpClient okHttpClient = new OkHttpClient.Builder()
-        .addInterceptor(new NetworkLogInterceptor())
+        .addInterceptor(new NetworkLogInterceptor()) 
         // 或者使用便捷方法
         // .addInterceptor(NetworkLogMonitor.getInterceptor())
         // 其他配置
@@ -91,56 +91,11 @@ OkHttpClient okHttpClient = new OkHttpClient.Builder()
 
 ### 3. 设置自定义加解密处理（可选）
 
-如果需要对请求体和响应体进行自定义加解密处理，可以实现 EncryptionHandler 接口：
+如果需要对URL、请求体和响应体进行自定义加解密处理，可以添加加密拦截器：
 
 ```java
-NetworkLogInterceptor.setEncryptionHandler(new NetworkLogInterceptor.EncryptionHandler() {
-    @Override
-    public String encryptRequestBody(String url, RequestBody originalBody) {
-        // 根据 URL 决定是否加密
-        if (url.contains("/api/secure/")) {
-            // 加密逻辑
-            try {
-                Buffer buffer = new Buffer();
-                originalBody.writeTo(buffer);
-                String originalContent = buffer.readUtf8();
-                return encrypt(originalContent); // 自定义加密方法
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        // 不加密，直接返回原始内容
-        try {
-            Buffer buffer = new Buffer();
-            originalBody.writeTo(buffer);
-            return buffer.readUtf8();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
-    }
-    
-    @Override
-    public String decryptResponseBody(String url, ResponseBody responseBody) {
-        // 根据 URL 决定是否解密
-        if (url.contains("/api/secure/")) {
-            // 解密逻辑
-            try {
-                String encryptedContent = responseBody.string();
-                return decrypt(encryptedContent); // 自定义解密方法
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        // 不解密，直接返回原始内容
-        try {
-            return responseBody.string();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
-    }
-});
+//添加你自己的加密拦截器
+NetworkLogInterceptor.setEncryptionInterceptor(new EncryptionInterceptor());
 ```
 
 ### 4. 停止监控（可选）
