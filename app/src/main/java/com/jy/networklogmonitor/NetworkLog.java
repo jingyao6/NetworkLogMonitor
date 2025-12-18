@@ -2,6 +2,8 @@ package com.jy.networklogmonitor;
 
 import java.util.Date;
 
+import okhttp3.Headers;
+
 public class NetworkLog {
     private String url;
     private String method;
@@ -9,7 +11,7 @@ public class NetworkLog {
     private long responseTime;
     private String requestBody;
     private String responseBody;
-    private String headers;
+    private Headers headers;
     private String errorMessage;
     private Date timestamp;
 
@@ -68,11 +70,11 @@ public class NetworkLog {
         this.responseBody = responseBody;
     }
 
-    public String getHeaders() {
+    public Headers getHeaders() {
         return headers;
     }
 
-    public void setHeaders(String headers) {
+    public void setHeaders(Headers headers) {
         this.headers = headers;
     }
 

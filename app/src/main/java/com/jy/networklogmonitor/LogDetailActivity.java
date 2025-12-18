@@ -106,7 +106,7 @@ public class LogDetailActivity extends AppCompatActivity {
         timestampText.setText(dateFormat.format(log.getTimestamp()));
 
         // 设置请求头
-        headersText.setText(log.getHeaders() != null ? log.getHeaders() : "No headers");
+        headersText.setText(log.getHeaders() != null ? log.getHeaders().toString() : "No headers");
 
         // 设置请求体
         requestBodyText.setText(log.getRequestBody() != null ? log.getRequestBody() : "No request body");
@@ -193,7 +193,7 @@ public class LogDetailActivity extends AppCompatActivity {
             
             // 更新当前日志
             currentLog.setUrl(urlText.getText().toString());
-            currentLog.setHeaders(headersText.getText().toString());
+            currentLog.setHeaders(currentLog.getHeaders());
             currentLog.setRequestBody(requestBodyText.getText().toString());
         }
     }
@@ -214,7 +214,8 @@ public class LogDetailActivity extends AppCompatActivity {
         // 构建请求
         Request.Builder requestBuilder = new Request.Builder()
                 .url(url);
-        
+        requestBuilder.headers(currentLog.getHeaders());
+
         // 准备请求体，不进行加密
         String finalRequestBody = body;
         

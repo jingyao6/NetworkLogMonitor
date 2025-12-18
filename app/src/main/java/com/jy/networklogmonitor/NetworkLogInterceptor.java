@@ -56,7 +56,7 @@ public class NetworkLogInterceptor implements Interceptor {
         }
 
         // 记录请求头
-        log.setHeaders(request.headers().toString());
+        log.setHeaders(request.headers());
 
         // 执行请求并处理可能的错误
         Response response = null;
