@@ -25,6 +25,7 @@ public class NetworkLogMonitor {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
             }
+            return;
         }
 
         // 启动悬浮窗服务
@@ -37,6 +38,7 @@ public class NetworkLogMonitor {
 
         isInitialized = true;
     }
+
 
     public static NetworkLogInterceptor getInterceptor() {
         return new NetworkLogInterceptor();
